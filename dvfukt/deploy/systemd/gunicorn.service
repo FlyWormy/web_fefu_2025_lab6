@@ -1,0 +1,27 @@
+[Unit]
+Description=FEFU Lab Gunicorn Service
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/fefu_lab
+EnvironmentFile=/etc/fefu_lab.env
+Environment="PATH=/var/www/fefu_lab/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=dvfukt.settings"
+
+ExecStart=/var/www/fefu_lab/venv/bin/gunicorn \
+    --config /var/www/fefu_lab/deploy/gunicorn/config.py \
+    dvfukt.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
