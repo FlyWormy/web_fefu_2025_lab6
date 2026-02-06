@@ -1,5 +1,4 @@
 #!/bin/bash
-# docker/django/entrypoint.sh
 
 # Функция для ожидания доступности базы данных
 wait_for_db() {
