@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    command: gunicorn dvfukt.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+    environment:
+      DEBUG: 0
+    restart: unless-stopped
+
+  nginx:
+    restart: unless-stopped
+    ports:
+      - "80:80"

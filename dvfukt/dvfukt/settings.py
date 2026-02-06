@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -146,3 +147,51 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'main.backends.EmailOrUsernameModelBackend',
 ]
+
+# Загрузка .env файла
+load_dotenv()
+
+# Определяем, работаем ли мы в Docker
+IN_DOCKER = os.getenv('IN_DOCKER', 'False') == 'True'
+
+if IN_DOCKER:
+    print("Running in Docker container")
+    # Database configuration for Docker
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'fefu_lab'),
+            'USER': os.getenv('DB_USER', 'django_user'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'django_password'),
+            'HOST': os.getenv('DB_HOST', 'db'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
+
+    # Static files for Docker
+    STATIC_ROOT = os.getenv('STATIC_ROOT', '/app/static')
+    MEDIA_ROOT = os.getenv('MEDIA_ROOT', '/app/media')
+
+    # Security settings for production
+    DEBUG = os.getenv('DEBUG', 'False') == 'True'
+    SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+
+    # HTTPS settings
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    CSRF_TRUSTED_ORIGINS = ['http://localhost', 'http://127.0.0.1']
+
+    # Logging in Docker
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    }

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fefu_lab}
+      POSTGRES_USER: ${DB_USER:-django_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-django_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-django_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - django_network
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-django_user}:${DB_PASSWORD:-django_password}@db:5432/${DB_NAME:-fefu_lab}
+      DEBUG: ${DEBUG:-0}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_SETTINGS_MODULE: dvfukt.settings
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - django_network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - web
+    networks:
+      - django_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  django_network:
+    driver: bridge
